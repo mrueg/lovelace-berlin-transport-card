@@ -60,9 +60,18 @@ class BerlinTransportCard extends HTMLElement {
 
                 // Global warnings (appear in more than one line)
                 const globalWarnings = Object.keys(warningCounts).filter(id => warningCounts[id] > 1);
-                if (showWarnings && globalWarnings.length > 0) {
+                const seenGlobalSummaries = new Set();
+                const uniqueGlobalWarnings = globalWarnings.filter(id => {
+                    const w = warningObjects[id];
+                    const summary = typeof w === 'object' ? w.summary : w;
+                    if (seenGlobalSummaries.has(summary)) return false;
+                    seenGlobalSummaries.add(summary);
+                    return true;
+                });
+
+                if (showWarnings && uniqueGlobalWarnings.length > 0) {
                     content += `<div class="warnings global-warnings">` +
-                        globalWarnings.map(id => {
+                        uniqueGlobalWarnings.map(id => {
                             const w = warningObjects[id];
                             const summary = typeof w === 'object' ? w.summary : w;
                             return `<div class="warning-item"><ha-icon icon="mdi:alert-circle" class="warning-icon"></ha-icon>${summary}</div>`;
