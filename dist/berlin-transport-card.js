@@ -20,6 +20,7 @@ class BerlinTransportCard extends HTMLElement {
         const showAbsoluteTime = config.show_absolute_time || (config.show_absolute_time === undefined);
         const showRelativeTime = config.show_relative_time || (config.show_relative_time === undefined);
         const includeWalkingTime = config.include_walking_time || (config.include_walking_time === undefined);
+        const showWarnings = config.show_warnings || (config.show_warnings === undefined);
 
         let content = "";
 
@@ -42,12 +43,19 @@ class BerlinTransportCard extends HTMLElement {
                     const relativeTime = Math.round((timestamp - currentDate) / (1000 * 60)) - walkingTime;
                     const relativeTimeDiv = `<div class="relative-time">${relativeTime}&prime;&nbsp;</div>`;
 
+                    const warnings = departure.warnings || [];
+                    const warningsDiv = showWarnings && warnings.length > 0 ?
+                        `<div class="warnings">${warnings.map(w => `<div class="warning-item"><ha-icon icon="mdi:alert-circle" class="warning-icon"></ha-icon>${w.summary}</div>`).join("")}</div>` : '';
+
                     return departure.cancelled && !showCancelled ? `` :
                         `<div class="departure ${departure.cancelled ? 'departure-cancelled' : ''}">
                             <div class="line">
                                 <div class="line-icon" style="background-color: ${departure.color}">${departure.line_name}</div>
                             </div>
-                            <div class="direction">${departure.direction}</div>
+                            <div class="direction">
+                                ${departure.direction}
+                                ${warningsDiv}
+                            </div>
                             <div class="time">${showRelativeTime ? relativeTimeDiv : ''}${showAbsoluteTime ? departure.time : ''}${showDelay ? delayDiv : ''}</div>
                         </div>`
                 });
@@ -146,6 +154,23 @@ class BerlinTransportCard extends HTMLElement {
             .relative-time {
                font-style: italic;
             }
+            .warnings {
+                display: flex;
+                flex-direction: column;
+                gap: 2px;
+                padding-top: 5px;
+            }
+            .warning-item {
+                font-size: 80%;
+                line-height: 1.2em;
+                color: var(--warning-color, #ff9800);
+                display: flex;
+                align-items: center;
+                gap: 4px;
+            }
+            .warning-icon {
+                --mdc-icon-size: 14px;
+            }
         `;
 
         content.id = "container";
@@ -183,6 +208,7 @@ class BerlinTransportCard extends HTMLElement {
             show_absolute_time: true,
             show_relative_time: true,
             include_walking_time: false,
+            show_warnings: true,
         }
     }
 }
@@ -204,7 +230,8 @@ class BerlinTransportCardEditor extends HTMLElement {
             show_delay: "Show delay",
             show_absolute_time: "Show absolute time of departures",
             show_relative_time: "Show relative time of departures",
-            include_walking_time: "Subtract walking time from relative time of departures"
+            include_walking_time: "Subtract walking time from relative time of departures",
+            show_warnings: "Show warnings (e.g. service disruptions)"
         };
 
         return labels[field.name] ? labels[field.name] : field.name;
@@ -229,6 +256,7 @@ class BerlinTransportCardEditor extends HTMLElement {
             { name: "show_absolute_time", selector: { boolean: {} }},
             { name: "show_relative_time", selector: { boolean: {} }},
             { name: "include_walking_time", selector: { boolean: {} }},
+            { name: "show_warnings", selector: { boolean: {} }},
         ];
         form.computeLabel = this._computeLabel;
         form.addEventListener("value-changed", this._valueChanged);
