@@ -10,6 +10,8 @@ class BerlinTransportCard extends HTMLElement {
 
   /* This is called every time sensor is updated */
   set hass(hass) {
+    this._hass = hass;
+
     const config = this.config;
     const maxEntries = config.max_entries || 10;
     const showStopName =
@@ -51,7 +53,7 @@ class BerlinTransportCard extends HTMLElement {
               const currentDate = new Date().getTime();
               const timestamp = new Date(departure.timestamp).getTime();
               const walkingTime = includeWalkingTime
-                ? departure.walking_time
+                ? departure.walking_time || 0
                 : 0;
               const relativeTime =
                 Math.round((timestamp - currentDate) / (1000 * 60)) -
@@ -76,6 +78,10 @@ class BerlinTransportCard extends HTMLElement {
     }
 
     this.shadowRoot.getElementById("container").innerHTML = content;
+  }
+
+  get hass() {
+    return this._hass;
   }
 
   /* This is called only when config is updated */
@@ -279,18 +285,30 @@ class BerlinTransportCardEditor extends HTMLElement {
   }
 }
 
-customElements.define("berlin-transport-card", BerlinTransportCard);
-customElements.define(
-  "berlin-transport-card-editor",
-  BerlinTransportCardEditor,
+if (!customElements.get("berlin-transport-card")) {
+  customElements.define("berlin-transport-card", BerlinTransportCard);
+}
+if (!customElements.get("berlin-transport-card-editor")) {
+  customElements.define(
+    "berlin-transport-card-editor",
+    BerlinTransportCardEditor,
+  );
+}
+
+console.info(
+  "%c  BERLIN-TRANSPORT-CARD  %c Loaded ",
+  "color: white; background: #000000; font-weight: 700;",
+  "color: #000000; background: white; font-weight: 700;",
 );
 
 window.customCards = window.customCards || [];
-window.customCards.push({
-  type: "berlin-transport-card",
-  name: "Berlin Transport Card",
-  preview: false,
-  description:
-    "Card for Berlin (BVG) and Brandenburg (VBB) transport integration",
-  documentationURL: "https://github.com/vas3k/lovelace-berlin-transport-card",
-});
+if (!window.customCards.some((card) => card.type === "berlin-transport-card")) {
+  window.customCards.push({
+    type: "berlin-transport-card",
+    name: "Berlin Transport Card",
+    preview: false,
+    description:
+      "Card for Berlin (BVG) and Brandenburg (VBB) transport integration",
+    documentationURL: "https://github.com/vas3k/lovelace-berlin-transport-card",
+  });
+}
